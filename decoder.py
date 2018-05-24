@@ -16,15 +16,15 @@ class Sgtin:
     def __init__(self, sgtin_in):
         sgtin_bin = self.binarize_sgtin(sgtin_in)
 
-        self.header, sgtin_bin = self.pop_from_left(sgtin_bin, 8)
-        self.filter, sgtin_bin = self.pop_from_left(sgtin_bin, 3)
-        self.partition, sgtin_bin = self.pop_from_left(sgtin_bin, 3)
+        self.header, sgtin_bin = self.extract_information(sgtin_bin, 8)
+        self.filter, sgtin_bin = self.extract_information(sgtin_bin, 3)
+        self.partition, sgtin_bin = self.extract_information(sgtin_bin, 3)
 
         gs1_size, item_size = self.sizes_dict[self.partition]
 
-        self.gs1, sgtin_bin = self.pop_from_left(sgtin_bin, gs1_size)
-        self.item, sgtin_bin = self.pop_from_left(sgtin_bin, item_size)
-        self.serial, sgtin_bin = self.pop_from_left(sgtin_bin, 38)
+        self.gs1, sgtin_bin = self.extract_information(sgtin_bin, gs1_size)
+        self.item, sgtin_bin = self.extract_information(sgtin_bin, item_size)
+        self.serial, sgtin_bin = self.extract_information(sgtin_bin, 38)
 
     def binarize_sgtin(self, sgtin):
         sgtin_bin = ''
@@ -33,7 +33,7 @@ class Sgtin:
             sgtin_bin += c_bin
         return sgtin_bin
 
-    def pop_from_left(self, sgtin_bin, length):
+    def extract_information(self, sgtin_bin, length):
         my_bin = sgtin_bin[:length]
         sgtin_bin = sgtin_bin[length:]
         return int(my_bin, 2), sgtin_bin
