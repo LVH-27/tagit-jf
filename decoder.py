@@ -2,13 +2,6 @@
 import requests
 
 
-url = "http://jobfair.tagitsolutions.com/q934dr4/hello-world/?ping=pong"
-username = "secret"
-password = "tU3kk!?xxx"
-
-sgtin = "300E5E1B8C71C14001B458D1"
-
-
 class Sgtin:
     sizes_dict = {
         0: (40, 4),
@@ -23,15 +16,15 @@ class Sgtin:
     def __init__(self, sgtin_in):
         sgtin_bin = self.binarize_sgtin(sgtin_in)
 
-        self.header_bin = self.pop_from_left(sgtin_bin, 8)
-        self.filter_bin = self.pop_from_left(sgtin_bin, 3)
-        self.partition_bin = self.pop_from_left(sgtin_bin, 3)
+        self.header, sgtin_bin = self.pop_from_left(sgtin_bin, 8)
+        self.filter, sgtin_bin = self.pop_from_left(sgtin_bin, 3)
+        self.partition, sgtin_bin = self.pop_from_left(sgtin_bin, 3)
 
-        gs1_size, item_size = self.sizes_dict[int(self.partition_bin, 2)]
+        gs1_size, item_size = self.sizes_dict[self.partition]
 
-        self.gs1_bin = self.pop_from_left(sgtin_bin, gs1_size)
-        self.item_bin = self.pop_from_left(sgtin_bin, item_size)
-        self.serial_bin = self.pop_from_left(sgtin_bin, 38)
+        self.gs1, sgtin_bin = self.pop_from_left(sgtin_bin, gs1_size)
+        self.item, sgtin_bin = self.pop_from_left(sgtin_bin, item_size)
+        self.serial, sgtin_bin = self.pop_from_left(sgtin_bin, 38)
 
     def binarize_sgtin(self, sgtin):
         sgtin_bin = ''
@@ -43,7 +36,7 @@ class Sgtin:
     def pop_from_left(self, sgtin_bin, length):
         my_bin = sgtin_bin[:length]
         sgtin_bin = sgtin_bin[length:]
-        return my_bin
+        return int(my_bin, 2), sgtin_bin
 
     def __repr__(self):
         return "SGTIN:\n\
@@ -52,14 +45,27 @@ class Sgtin:
             \tPartition: {}\n\
             \tGS1 Company: {}\n\
             \tItem: {}\n\
-            \tSerial: {}".format(int(self.header_bin, 2),
-                                 int(self.filter_bin, 2),
-                                 int(self.partition_bin, 2),
-                                 int(self.gs1_bin, 2),
-                                 int(self.item_bin, 2),
-                                 int(self.serial_bin, 2))
+            \tSerial: {}".format(self.header,
+                                 self.filter,
+                                 self.partition,
+                                 self.gs1,
+                                 self.item,
+                                 self.serial)
 
+
+username = "secret"
+password = "tU3kk!?xxx"
+
+sgtin = str(input())
 
 my_sgtin = Sgtin(sgtin)
-print(my_sgtin)
-# requests.get(url, auth=(username, password))
+url = "http://jobfair.tagitsolutions.com/q934dr4/{}/{}".format(my_sgtin.gs1, my_sgtin.item)
+
+resp = requests.get(url, auth=(username, password))
+data = resp.json()
+
+print("Item name: {}".format(data['itemName']))
+print("Item reference: {}".format(data['itemReference']))
+print("Item serial: {}".format(my_sgtin.serial))
+print("Item manufacturer: {}".format(data['company']['companyName']))
+print("Manufacturer prefix: {}".format(data['company']['companyPrefix']))
